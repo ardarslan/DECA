@@ -55,6 +55,8 @@ class DECA(nn.Module):
         # face mask for rendering details
         mask = imread(model_cfg.face_eye_mask_path).astype(np.float32)/255.; mask = torch.from_numpy(mask[:,:,0])[None,None,:,:].contiguous()
         self.uv_face_eye_mask = F.interpolate(mask, [model_cfg.uv_size, model_cfg.uv_size]).to(self.device)
+        self.uv_face_eye_mask = 1 * self.uv_face_eye_mask.bool()
+
         mask = imread(model_cfg.face_mask_path).astype(np.float32)/255.; mask = torch.from_numpy(mask[:,:,0])[None,None,:,:].contiguous()
         self.uv_face_mask = F.interpolate(mask, [model_cfg.uv_size, model_cfg.uv_size]).to(self.device)
         # displacement correction
@@ -243,7 +245,7 @@ class DECA(nn.Module):
                 else:
                     uv_texture_gt = uv_texture[:,:3,:,:]
             else:
-                uv_texture_gt = uv_gt[:,:3,:,:]*self.uv_face_eye_mask + (torch.ones_like(uv_gt[:,:3,:,:])*(1-self.uv_face_eye_mask)*0.7)
+                uv_texture_gt = uv_gt[:,:3,:,:]*self.uv_face_eye_mask + (torch.ones_like(uv_gt[:,:3,:,:])*(1-self.uv_face_eye_mask))
             
             opdict['uv_texture_gt'] = uv_texture_gt
             visdict = {
@@ -299,15 +301,15 @@ class DECA(nn.Module):
                         uvfaces=uvfaces, 
                         normal_map=normal_map)
         # upsample mesh, save detailed mesh
-        texture = texture[:,:,[2,1,0]]
-        normals = opdict['normals'][i].cpu().numpy()
-        displacement_map = opdict['displacement_map'][i].cpu().numpy().squeeze()
-        dense_vertices, dense_colors, dense_faces = util.upsample_mesh(vertices, normals, faces, displacement_map, texture, self.dense_template)
-        util.write_obj(filename.replace('.obj', '_detail.obj'), 
-                        dense_vertices, 
-                        dense_faces,
-                        colors = dense_colors,
-                        inverse_face_order=True)
+        # texture = texture[:,:,[2,1,0]]
+        # normals = opdict['normals'][i].cpu().numpy()
+        # displacement_map = opdict['displacement_map'][i].cpu().numpy().squeeze()
+        # dense_vertices, dense_colors, dense_faces = util.upsample_mesh(vertices, normals, faces, displacement_map, texture, self.dense_template)
+        # util.write_obj(filename.replace('.obj', '_detail.obj'), 
+        #                 dense_vertices, 
+        #                 dense_faces,
+        #                 colors = dense_colors,
+        #                 inverse_face_order=True)
     
     def run(self, imagepath, iscrop=True):
         ''' An api for running deca given an image path
